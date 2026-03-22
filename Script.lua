@@ -22,46 +22,71 @@ local ClaimReward = ReplicatedStorage
 --// Window
 local Window = Rayfield:CreateWindow({
     Name = "Duck Shop 🦆",
-    LoadingTitle = "Duck Hub",
+    LoadingTitle = "Método Lucky Spin",
     LoadingSubtitle = "by Duck 🔰",
-    ConfigurationSaving = {
-        Enabled = false
-    }
+    ConfigurationSaving = { Enabled = false }
 })
 
 --// Tabs
 local MainTab = Window:CreateTab("🎰 Lucky Spins", nil)
 local CreditsTab = Window:CreateTab("👤 Créditos", nil)
 
---// Variables
+---------------------------------------------------
+-- Timer
+---------------------------------------------------
+local startTime = tick()
+
+local TimerLabel = MainTab:CreateLabel("⏱️ Tempo ativo: 00:00:00")
+
+task.spawn(function()
+    while true do
+        local elapsed = math.floor(tick() - startTime)
+
+        local hours = math.floor(elapsed / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = elapsed % 60
+
+        TimerLabel:Set(string.format("⏱️ Tempo ativo: %02d:%02d:%02d", hours, minutes, seconds))
+
+        task.wait(1)
+    end
+end)
+
+---------------------------------------------------
+-- Automação
+---------------------------------------------------
+MainTab:CreateSection("⚙️ Automação")
+
 local ativo = false
 local antiAfk = false
 
---// Lucky Spins Toggle
 MainTab:CreateToggle({
     Name = "Auto Claim Reward",
     CurrentValue = false,
-    Flag = "AutoClaim",
     Callback = function(Value)
         ativo = Value
     end,
 })
 
---// Anti-AFK Toggle
 MainTab:CreateToggle({
     Name = "Anti-AFK",
     CurrentValue = false,
-    Flag = "AntiAFK",
     Callback = function(Value)
         antiAfk = Value
     end,
 })
 
---// Credits
-CreditsTab:CreateLabel("👑 Duck")
-CreditsTab:CreateLabel("🔰 Alvz")
+---------------------------------------------------
+-- Créditos
+---------------------------------------------------
+CreditsTab:CreateSection("👑 Créditos")
 
---// Anti AFK system
+CreditsTab:CreateLabel("Duck")
+CreditsTab:CreateLabel("Alvz")
+
+---------------------------------------------------
+-- Anti AFK
+---------------------------------------------------
 player.Idled:Connect(function()
     if antiAfk then
         VirtualUser:Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
@@ -70,9 +95,12 @@ player.Idled:Connect(function()
     end
 end)
 
---// Loop
+---------------------------------------------------
+-- Loop principal
+---------------------------------------------------
 task.spawn(function()
     local i = 1
+
     while true do
         if ativo then
             pcall(function()
@@ -80,6 +108,7 @@ task.spawn(function()
             end)
             i += 1
         end
+
         task.wait()
     end
 end)
