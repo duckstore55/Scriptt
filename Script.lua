@@ -11,7 +11,6 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 
---// PLAYER
 local player = Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Name = SCRIPT_ID
@@ -28,15 +27,12 @@ local ClaimReward = ReplicatedStorage
     :WaitForChild("RF")
     :WaitForChild("ClaimReward")
 
---// CHECK INTEGRITY
-if not game or not Players.LocalPlayer then return end
-
---// DRAG SYSTEM
+--// DRAG
 local function makeDraggable(frame)
     local dragging, dragInput, startPos, startFramePos
 
     frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             startPos = input.Position
             startFramePos = frame.Position
@@ -50,7 +46,7 @@ local function makeDraggable(frame)
     end)
 
     frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
     end)
@@ -73,17 +69,17 @@ local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0.18,0,0.25,0)
 main.Position = UDim2.new(0.41,0,0.37,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,35)
+main.Visible = false
 Instance.new("UICorner", main)
 makeDraggable(main)
 
--- Gradient anime
-local gradient = Instance.new("UIGradient", main)
-gradient.Color = ColorSequence.new{
+-- Gradient + Stroke
+local grad = Instance.new("UIGradient", main)
+grad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(20,20,30)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(40,40,60))
 }
 
--- Stroke neon
 local stroke = Instance.new("UIStroke", main)
 stroke.Thickness = 1.5
 stroke.Color = Color3.fromRGB(0,170,255)
@@ -111,7 +107,34 @@ closeMain.Text = "X"
 closeMain.BackgroundColor3 = Color3.fromRGB(120,0,0)
 Instance.new("UICorner", closeMain)
 
---// CONTENT
+-- ICON
+local imageBtn = Instance.new("ImageButton", gui)
+imageBtn.Size = UDim2.new(0.12,0,0.12,0)
+imageBtn.Position = UDim2.new(0.44,0,0.35,0)
+imageBtn.Image = "rbxassetid://140618665887288"
+imageBtn.BackgroundTransparency = 1
+imageBtn.Visible = false
+imageBtn.ScaleType = Enum.ScaleType.Fit
+
+-- Floating animation
+task.spawn(function()
+    while true do
+        if imageBtn.Visible then
+            TweenService:Create(imageBtn, TweenInfo.new(1), {
+                Position = imageBtn.Position + UDim2.new(0,0,0.01,0)
+            }):Play()
+            task.wait(1)
+            TweenService:Create(imageBtn, TweenInfo.new(1), {
+                Position = imageBtn.Position - UDim2.new(0,0,0.01,0)
+            }):Play()
+            task.wait(1)
+        else
+            task.wait()
+        end
+    end
+end)
+
+-- CONTENT
 local content = Instance.new("Frame", main)
 content.Size = UDim2.new(1,0,0.8,0)
 content.Position = UDim2.new(0,0,0.2,0)
@@ -122,7 +145,6 @@ local function styleButton(btn)
     btn.TextColor3 = Color3.new(1,1,1)
     btn.Font = Enum.Font.GothamSemibold
     btn.TextSize = 14
-
     Instance.new("UICorner", btn)
 
     local s = Instance.new("UIStroke", btn)
@@ -160,7 +182,7 @@ btnConfig.Position = UDim2.new(0.1,0,0.55,0)
 btnConfig.Text = "⚙️ Configuração"
 styleButton(btnConfig)
 
---// PANEL
+-- PANEL
 local panel = Instance.new("Frame", gui)
 panel.Size = UDim2.new(0.2,0,0.2,0)
 panel.Position = UDim2.new(0.62,0,0.4,0)
@@ -176,7 +198,7 @@ closeTab.Text = "X"
 closeTab.BackgroundColor3 = Color3.fromRGB(120,0,0)
 Instance.new("UICorner", closeTab)
 
---// TABS
+-- TABS
 local tabLucky = Instance.new("Frame", panel)
 tabLucky.Size = UDim2.new(1,0,1,0)
 tabLucky.BackgroundTransparency = 1
@@ -191,14 +213,14 @@ tabConfig.Size = UDim2.new(1,0,1,0)
 tabConfig.BackgroundTransparency = 1
 tabConfig.Visible = false
 
---// LUCKY
+-- Lucky toggle
 local toggle = Instance.new("TextButton", tabLucky)
 toggle.Size = UDim2.new(0.7,0,0.3,0)
 toggle.Position = UDim2.new(0.15,0,0.35,0)
 toggle.Text = "OFF"
 styleButton(toggle)
 
---// CRED
+-- Cred
 local cred = Instance.new("TextLabel", tabCred)
 cred.Size = UDim2.new(1,0,1,0)
 cred.BackgroundTransparency = 1
@@ -206,7 +228,7 @@ cred.Text = "👑 Duck\n🔰Alvz"
 cred.TextScaled = true
 cred.TextColor3 = Color3.new(1,1,1)
 
---// CONFIG
+-- CONFIG
 local antiAfkAtivo = false
 
 local antiAfkBtn = Instance.new("TextButton", tabConfig)
@@ -220,7 +242,6 @@ antiAfkBtn.MouseButton1Click:Connect(function()
     antiAfkBtn.Text = antiAfkAtivo and "Anti-AFK: ON" or "Anti-AFK: OFF"
 end)
 
--- Anti AFK system
 player.Idled:Connect(function()
     if antiAfkAtivo then
         VirtualUser:CaptureController()
@@ -228,7 +249,31 @@ player.Idled:Connect(function()
     end
 end)
 
---// BUTTON ACTIONS
+-- OPEN/CLOSE ANIMATIONS
+local function openUI()
+    main.Visible = true
+    main.Size = UDim2.new(0,0,0,0)
+    main.BackgroundTransparency = 1
+
+    TweenService:Create(main, TweenInfo.new(0.25), {
+        Size = UDim2.new(0.18,0,0.25,0),
+        BackgroundTransparency = 0
+    }):Play()
+end
+
+local function closeUI()
+    local t = TweenService:Create(main, TweenInfo.new(0.2), {
+        Size = UDim2.new(0,0,0,0),
+        BackgroundTransparency = 1
+    })
+    t:Play()
+    t.Completed:Connect(function()
+        main.Visible = false
+        imageBtn.Visible = true
+    end)
+end
+
+-- BUTTONS
 btnMain.MouseButton1Click:Connect(function()
     panel.Visible = true
     tabLucky.Visible = true
@@ -255,18 +300,22 @@ closeTab.MouseButton1Click:Connect(function()
 end)
 
 closeMain.MouseButton1Click:Connect(function()
-    main.Visible = false
+    closeUI()
 end)
 
---// TOGGLE LUCKY
-local ativo = false
+imageBtn.MouseButton1Click:Connect(function()
+    imageBtn.Visible = false
+    openUI()
+end)
 
+-- Lucky toggle
+local ativo = false
 toggle.MouseButton1Click:Connect(function()
     ativo = not ativo
     toggle.Text = ativo and "ON" or "OFF"
 end)
 
---// LOOP
+-- LOOP
 task.spawn(function()
     local i = 1
     while true do
