@@ -2,12 +2,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local IMAGE_ID = "rbxassetid://140618665887288"
 
 local player = Players.LocalPlayer
 
--- ===== GUI (CORRIGIDO PRIORIDADE) =====
+-- ===== GUI =====
 local gui = Instance.new("ScreenGui")
 gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -26,7 +27,7 @@ local ClaimReward = ReplicatedStorage
     :WaitForChild("RF")
     :WaitForChild("ClaimReward")
 
--- ===== DRAG SYSTEM =====
+-- ===== DRAG =====
 local function makeDraggable(frame)
     local dragging, dragInput, startPos, startFramePos
 
@@ -63,6 +64,51 @@ local function makeDraggable(frame)
     end)
 end
 
+-- ===== ANTI-AFK =====
+local antiAfk = false
+local lastActivity = os.time()
+local AFK_TIME = 600 -- 10 minutos
+
+UIS.InputBegan:Connect(function()
+    lastActivity = os.time()
+end)
+
+UIS.InputChanged:Connect(function()
+    lastActivity = os.time()
+end)
+
+player.Idled:Connect(function()
+    if antiAfk then
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(5)
+
+        if antiAfk then
+            local diff = os.time() - lastActivity
+
+            if diff >= AFK_TIME then
+                lastActivity = os.time()
+
+                -- anti kick forte
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+
+                -- micro movimento
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0,0,0.1)
+                end
+            end
+        end
+    end
+end)
+
 -- ===== HUB =====
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0.18,0,0.25,0)
@@ -83,7 +129,7 @@ top.ZIndex = 11
 local title = Instance.new("TextLabel", top)
 title.Size = UDim2.new(1,-60,1,0)
 title.Position = UDim2.new(0,10,0,0)
-title.Text = "Duck Shop 🦆"
+title.Text = "Duck Shop"
 title.TextColor3 = Color3.fromRGB(255,215,0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
@@ -91,7 +137,6 @@ title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.ZIndex = 11
 
--- FECHAR MAIN
 local closeMain = Instance.new("TextButton", top)
 closeMain.Size = UDim2.new(0,20,0,20)
 closeMain.Position = UDim2.new(1,-25,0,5)
@@ -100,31 +145,6 @@ closeMain.TextColor3 = Color3.new(1,1,1)
 closeMain.BackgroundColor3 = Color3.fromRGB(120,0,0)
 closeMain.ZIndex = 12
 Instance.new("UICorner", closeMain)
-
--- LOGO
-local imageBtn = Instance.new("ImageButton", gui)
-imageBtn.Size = UDim2.new(0.12,0,0.12,0)
-imageBtn.Position = UDim2.new(0.44,0,0.35,0)
-imageBtn.Image = IMAGE_ID
-imageBtn.Visible = false
-imageBtn.BackgroundTransparency = 1
-imageBtn.ScaleType = Enum.ScaleType.Fit
-imageBtn.BorderSizePixel = 0
-imageBtn.ZIndex = 10
-
-makeDraggable(imageBtn)
-
-imageBtn.MouseEnter:Connect(function()
-    TweenService:Create(imageBtn, TweenInfo.new(0.2), {
-        Size = UDim2.new(0.14,0,0.14,0)
-    }):Play()
-end)
-
-imageBtn.MouseLeave:Connect(function()
-    TweenService:Create(imageBtn, TweenInfo.new(0.2), {
-        Size = UDim2.new(0.12,0,0.12,0)
-    }):Play()
-end)
 
 -- CONTENT
 local content = Instance.new("Frame", main)
@@ -153,7 +173,7 @@ Instance.new("UICorner", btnCred)
 
 -- PANEL
 local panel = Instance.new("Frame", gui)
-panel.Size = UDim2.new(0.2,0,0.2,0)
+panel.Size = UDim2.new(0.2,0,0.25,0)
 panel.Position = UDim2.new(0.62,0,0.4,0)
 panel.BackgroundColor3 = Color3.fromRGB(20,20,20)
 panel.Visible = false
@@ -183,15 +203,25 @@ tabCred.BackgroundTransparency = 1
 tabCred.Visible = false
 tabCred.ZIndex = 11
 
--- TOGGLE
+-- TOGGLE LUCKY
 local toggle = Instance.new("TextButton", tabLucky)
-toggle.Size = UDim2.new(0.7,0,0.3,0)
-toggle.Position = UDim2.new(0.15,0,0.35,0)
+toggle.Size = UDim2.new(0.7,0,0.2,0)
+toggle.Position = UDim2.new(0.15,0,0.2,0)
 toggle.Text = "OFF"
 toggle.TextColor3 = Color3.new(1,1,1)
 toggle.BackgroundColor3 = Color3.fromRGB(150,0,0)
 toggle.ZIndex = 12
 Instance.new("UICorner", toggle)
+
+-- TOGGLE ANTI-AFK
+local antiBtn = Instance.new("TextButton", tabLucky)
+antiBtn.Size = UDim2.new(0.7,0,0.2,0)
+antiBtn.Position = UDim2.new(0.15,0,0.55,0)
+antiBtn.Text = "🛡️ Anti-AFK: OFF"
+antiBtn.TextColor3 = Color3.new(1,1,1)
+antiBtn.BackgroundColor3 = Color3.fromRGB(80,0,0)
+antiBtn.ZIndex = 12
+Instance.new("UICorner", antiBtn)
 
 -- CREDITS
 local cred = Instance.new("TextLabel", tabCred)
@@ -202,7 +232,7 @@ cred.TextScaled = true
 cred.TextColor3 = Color3.new(1,1,1)
 cred.ZIndex = 11
 
--- ===== FUNCIONAL =====
+-- NAV
 btnMain.MouseButton1Click:Connect(function()
     panel.Visible = true
     tabLucky.Visible = true
@@ -222,23 +252,24 @@ end)
 closeMain.MouseButton1Click:Connect(function()
     main.Visible = false
     panel.Visible = false
-    imageBtn.Visible = true
 end)
 
-imageBtn.MouseButton1Click:Connect(function()
-    main.Visible = true
-    imageBtn.Visible = false
-end)
-
--- TOGGLE
+-- TOGGLES
 local ativo = false
+
 toggle.MouseButton1Click:Connect(function()
     ativo = not ativo
     toggle.Text = ativo and "ON" or "OFF"
     toggle.BackgroundColor3 = ativo and Color3.fromRGB(0,200,0) or Color3.fromRGB(150,0,0)
 end)
 
--- LOOP
+antiBtn.MouseButton1Click:Connect(function()
+    antiAfk = not antiAfk
+    antiBtn.Text = antiAfk and "🛡️ Anti-AFK: ON" or "🛡️ Anti-AFK: OFF"
+    antiBtn.BackgroundColor3 = antiAfk and Color3.fromRGB(0,170,0) or Color3.fromRGB(80,0,0)
+end)
+
+-- LOOP LUCKY
 task.spawn(function()
     local i = 1
     while true do
