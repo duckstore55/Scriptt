@@ -1,14 +1,28 @@
---// KEYAUTH
-local KeyAuth = loadstring(game:HttpGet("https://keyauth.win/api/1.2/"))()
+-- DEBUG
+print("Script iniciou")
+
+--// KEYAUTH (LOADER FUNCIONAL)
+local KeyAuth = loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/KeyAuth-Client-Example/main/luau.lua"))()
 
 local appname = "Emmanoeljoao254's Application"
 local ownerid = "xxw5rKPjcz"
 local secret = "6057f229e8378277622098c80909d9c8f5506a81ab9f003f0417685b17bd4235"
 local version = "1.0"
 
-KeyAuth:init(appname, ownerid, secret, version)
+print("Iniciando KeyAuth...")
 
---// UI KEY (ANTES DO HUB)
+local success, err = pcall(function()
+    KeyAuth:init(appname, ownerid, secret, version)
+end)
+
+if not success then
+    warn("Erro KeyAuth:", err)
+    return
+end
+
+print("KeyAuth iniciado")
+
+--// UI KEY
 local player = game:GetService("Players").LocalPlayer
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -45,14 +59,13 @@ local valid = false
 
 Button.MouseButton1Click:Connect(function()
     local key = TextBox.Text
-
     Status.Text = "Verificando..."
 
     local success, result = pcall(function()
         return KeyAuth:license(key)
     end)
 
-    if success and result.success then
+    if success and result and result.success then
         Status.Text = "Key válida!"
         valid = true
         task.wait(1)
@@ -62,17 +75,27 @@ Button.MouseButton1Click:Connect(function()
     end
 end)
 
-repeat task.wait() until valid
+-- TIMEOUT (anti travar)
+local timeout = 30
+local start = tick()
 
---// RAYFIELD UI
+while not valid and tick() - start < timeout do
+    task.wait()
+end
+
+if not valid then
+    player:Kick("Falha ao autenticar")
+    return
+end
+
+---------------------------------------------------
+-- RAYFIELD
+---------------------------------------------------
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
-
-local player = Players.LocalPlayer
 
 --// Remote
 local ClaimReward = ReplicatedStorage
@@ -101,19 +124,17 @@ local CreditsTab = Window:CreateTab("👤 Créditos", nil)
 -- Timer
 ---------------------------------------------------
 local startTime = tick()
-
 local TimerLabel = MainTab:CreateLabel("⏱️ Tempo ativo: 00:00:00")
 
 task.spawn(function()
     while true do
         local elapsed = math.floor(tick() - startTime)
 
-        local hours = math.floor(elapsed / 3600)
-        local minutes = math.floor((elapsed % 3600) / 60)
-        local seconds = elapsed % 60
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = elapsed % 60
 
-        TimerLabel:Set(string.format("⏱️ Tempo ativo: %02d:%02d:%02d", hours, minutes, seconds))
-
+        TimerLabel:Set(string.format("⏱️ Tempo ativo: %02d:%02d:%02d", h, m, s))
         task.wait(1)
     end
 end)
@@ -146,7 +167,6 @@ MainTab:CreateToggle({
 -- Créditos
 ---------------------------------------------------
 CreditsTab:CreateSection("👑 Créditos")
-
 CreditsTab:CreateLabel("Duck")
 CreditsTab:CreateLabel("Alvz")
 
@@ -174,7 +194,6 @@ task.spawn(function()
             end)
             i += 1
         end
-
         task.wait()
     end
 end)
